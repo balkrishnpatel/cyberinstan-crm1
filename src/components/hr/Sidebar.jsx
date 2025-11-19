@@ -22,12 +22,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     { path: '/hr-portal/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     // { path: '/hr-portal/profile', icon: User, label: 'My Profile' },
     { path: '/hr-portal/onboarding', icon: UserPlus, label: 'Employee Onboarding' },
+
     { path: '/hr-portal/employees', icon: Users, label: 'Employees Management' },
+    { path: '/hr-portal/Probationary', icon: Users, label: 'Probationary Employees' },
     { path: '/hr-portal/office-location', icon: Package, label: 'Office Location' },
     { path: '/hr-portal/role-management', icon: Users, label: 'Role Management' },
-
     // { path: '/hr-portal/adminusers', icon: Package, label: 'Manage Admin User' },
-    { path: '/hr-portal/Probationary', icon: Users, label: 'Probationary Employees' },
     { path: '/hr-portal/departments', icon: Users, label: 'Department Management' },
     { path: '/hr-portal/designations', icon: Users, label: 'Designation Management' },
     // { path: '/hr-portal/attendance', icon: Clock, label: 'Attendance Management' },

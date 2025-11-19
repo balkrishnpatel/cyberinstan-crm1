@@ -1,3 +1,4 @@
+
   import { useState, useEffect } from 'react';
 import { EmployeeMasterAPI } from '../../../api/employeeMaster';
 import { EmployeePassportDetailsAPI } from '../../../api/employeePassportDetails';
@@ -8,7 +9,7 @@ import { OfficeLocationsAPI } from '../../../api/officeLocations';
 import { EmployeeRolesAPI } from '../../../api/employeeRoles';
 import EmployeePriorExperience from './EmployeePriorExperience';  
 import './EmployeeModal.css';
-import EmployeeFamilyDetails from './EmployeeFamilyDetails';
+import EmployeeFamilyDetails from './EmployeeFamilyDetails'; 
 import EmployeeInsuranceDetails from './EmployeeInsuranceDetails';
 import EmployeeReferences from './EmployeeReferences';
 import EmployeeSkills from './EmployeeSkills';
@@ -500,27 +501,27 @@ const handleInputChange = (section, field, value) => {
     const newErrors = {};
     const { passport } = formData;
     
-    if (!passport.passport_number?.trim()) {
-      newErrors.passport_number = 'Passport number is required';
-    }
-    if (!passport.place_of_issue?.trim()) {
-      newErrors.place_of_issue = 'Place of issue is required';
-    }
-    if (!passport.date_of_issue) {
-      newErrors.date_of_issue = 'Date of issue is required';
-    }
-    if (!passport.date_of_expiry) {
-      newErrors.date_of_expiry = 'Date of expiry is required';
-    }
+    // if (!passport.passport_number?.trim()) {
+    //   newErrors.passport_number = 'Passport number is required';
+    // }
+    // if (!passport.place_of_issue?.trim()) {
+    //   newErrors.place_of_issue = 'Place of issue is required';
+    // }
+    // if (!passport.date_of_issue) {
+    //   newErrors.date_of_issue = 'Date of issue is required';
+    // }
+    // if (!passport.date_of_expiry) {
+    //   newErrors.date_of_expiry = 'Date of expiry is required';
+    // }
 
-    if (passport.date_of_issue && passport.date_of_expiry) {
-      const issueDate = new Date(passport.date_of_issue);
-      const expiryDate = new Date(passport.date_of_expiry);
+    // if (passport.date_of_issue && passport.date_of_expiry) {
+    //   const issueDate = new Date(passport.date_of_issue);
+    //   const expiryDate = new Date(passport.date_of_expiry);
 
-      if (expiryDate <= issueDate) {
-        newErrors.date_of_expiry = 'Expiry date must be after issue date';
-      }
-    }
+    //   if (expiryDate <= issueDate) {
+    //     newErrors.date_of_expiry = 'Expiry date must be after issue date';
+    //   }
+    // }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -528,57 +529,7 @@ const handleInputChange = (section, field, value) => {
 
   // ============= MODIFIED handleNext function =============
 const handleNext = async () => {
-  // if (currentTab === 'personal') {
-  //   if (!validatePersonalDetails()) {
-  //     return;
-  //   }
-
-  //   try {
-  //     setIsLoading(true);
-  //     let response;
-      
-  //     if (savedEmployeeId) {
-  //       const employeeData = {
-  //         employee: {
-  //           ...formData.employee,
-  //           employee_id: savedEmployeeId
-  //         },
-  //         employment: formData.employment
-  //       };
-  //       response = await EmployeeMasterAPI.update(employeeData);
-  //     } else {
-  //       const employeeData = {
-  //         employee: formData.employee,
-  //         employment: formData.employment
-  //       };
-  //       response = await EmployeeMasterAPI.add(employeeData);
-  //     }
-
-  //     if (response.success) {
-  //       const employeeIdFromResponse = response.result?.employee?.employee_id ||
-  //                                     response.result?.employee?.id ||
-  //                                     savedEmployeeId;
-
-  //       if (!employeeIdFromResponse) {
-  //         showErrorWithRetry('Failed to get employee ID from response');
-  //         return;
-  //       }
-
-  //       setSavedEmployeeId(employeeIdFromResponse);
-  //       setIsUpdateMode(true);
-  //       markTabAsCompleted('personal'); // ✅ Mark as completed
-  //       // alert(`Personal details ${savedEmployeeId ? 'updated' : 'saved'} successfully!`);
-  //       setCurrentTab('passport');
-  //     } else {
-  //       showErrorWithRetry(response.message || 'Failed to save personal details');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error saving employee:', error);
-  //     showErrorWithRetry(error.message || 'Backend server is not responding');
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // }
+  
   if (currentTab === 'personal') {
     if (!validatePersonalDetails()) {
       return;
@@ -639,14 +590,29 @@ const handleNext = async () => {
       setIsLoading(false);
     }
   } 
+  
   else if (currentTab === 'passport') {
-    if (!validatePassportDetails()) {
-      return;
-    }
-
     if (!savedEmployeeId) {
       alert('Please save personal details first');
       setCurrentTab('personal');
+      return;
+    }
+
+    // 🔥 Check if all passport fields are empty - if yes, skip this tab
+    const isPassportEmpty = !formData.passport.passport_number?.trim() &&
+                            !formData.passport.place_of_issue?.trim() &&
+                            !formData.passport.date_of_issue &&
+                            !formData.passport.date_of_expiry;
+
+    if (isPassportEmpty) {
+      // Skip passport details and move to next tab
+      markTabAsCompleted('passport');
+      setCurrentTab('skills');
+      return;
+    }
+
+    // If any field is filled, validate all required fields
+    if (!validatePassportDetails()) {
       return;
     }
 
@@ -655,23 +621,28 @@ const handleNext = async () => {
       let passportData;
       let isUpdate = false;
 
+      // 🔥 Helper function to convert empty strings to null
+      const sanitizeValue = (value) => {
+        return value && value.trim() !== '' ? value : null;
+      };
+
       if (formData.passport.id && formData.passport.id !== null) {
         isUpdate = true;
         passportData = {
           passport_id: formData.passport.id,
           employee_id: savedEmployeeId,
-          passport_number: formData.passport.passport_number,
-          place_of_issue: formData.passport.place_of_issue,
-          date_of_issue: formData.passport.date_of_issue,
-          date_of_expiry: formData.passport.date_of_expiry
+          passport_number: sanitizeValue(formData.passport.passport_number),
+          place_of_issue: sanitizeValue(formData.passport.place_of_issue),
+          date_of_issue: sanitizeValue(formData.passport.date_of_issue),
+          date_of_expiry: sanitizeValue(formData.passport.date_of_expiry)
         };
       } else {
         passportData = {
           employee_id: savedEmployeeId,
-          passport_number: formData.passport.passport_number,
-          place_of_issue: formData.passport.place_of_issue,
-          date_of_issue: formData.passport.date_of_issue,
-          date_of_expiry: formData.passport.date_of_expiry
+          passport_number: sanitizeValue(formData.passport.passport_number),
+          place_of_issue: sanitizeValue(formData.passport.place_of_issue),
+          date_of_issue: sanitizeValue(formData.passport.date_of_issue),
+          date_of_expiry: sanitizeValue(formData.passport.date_of_expiry)
         };
       }
 
@@ -689,8 +660,7 @@ const handleNext = async () => {
             }
           }));
         }
-        markTabAsCompleted('passport'); // ✅ Mark as completed
-        // alert(`Passport details ${isUpdate ? 'updated' : 'saved'} successfully!`);
+        markTabAsCompleted('passport');
         setCurrentTab('skills');
       } else {
         showErrorWithRetry(response.message || 'Failed to save passport details');
@@ -1620,15 +1590,6 @@ const handleNext = async () => {
                 />
               )}
 
-              {/* {currentTab === 'documents' && (
-                <EmployeeDocumentChecklist
-                  employeeId={savedEmployeeId}
-                  isLoading={isLoading}
-                  setIsLoading={setIsLoading}
-                  onNextTab={() => setCurrentTab('documents')}
-                  onComplete={() => markTabAsCompleted('documents')} // ✅ Add this
-                />
-              )} */}
 
               {currentTab === 'documents' && (
                 <EmployeeDocumentChecklist
@@ -1702,33 +1663,25 @@ export default EmployeeModal;
 
 
 
-
-
-
-
-
-
-
-// ######################Perfect Code################################
-
-// import { useState, useEffect } from 'react';
+//   import { useState, useEffect } from 'react';
 // import { EmployeeMasterAPI } from '../../../api/employeeMaster';
 // import { EmployeePassportDetailsAPI } from '../../../api/employeePassportDetails';
-// import { EmployeeSkillsAPI } from '../../../api/employeeSkills';
+// import { EmployeeSkillsAPI } from '../../../api/employeeSkills'; 
 // import { DepartmentsAPI } from '../../../api/departments';
 // import { DesignationsAPI } from '../../../api/designations';
 // import { OfficeLocationsAPI } from '../../../api/officeLocations';
 // import { EmployeeRolesAPI } from '../../../api/employeeRoles';
 // import EmployeePriorExperience from './EmployeePriorExperience';  
 // import './EmployeeModal.css';
-// import EmployeeFamilyDetails from './EmployeeFamilyDetails';
+// import EmployeeFamilyDetails from './EmployeeFamilyDetails'; 
 // import EmployeeInsuranceDetails from './EmployeeInsuranceDetails';
 // import EmployeeReferences from './EmployeeReferences';
 // import EmployeeSkills from './EmployeeSkills';
 // import EmployeeBankDetails from './EmployeeBankDetails';
 // import EmployeeDocumentChecklist from './EmployeeDocumentChecklist';
 
-// const EmployeeModal = ({ isOpen, onClose, employeeId = null }) => {
+// // const EmployeeModal = ({ isOpen, onClose, employeeId = null }) => {
+// const EmployeeModal = ({ isOpen, onClose, employeeId = null, type = 'add', hideSearch = false }) => {
 //   const [currentTab, setCurrentTab] = useState('personal');
 //   const [isLoading, setIsLoading] = useState(false);
 //   const [errors, setErrors] = useState({});
@@ -1736,6 +1689,7 @@ export default EmployeeModal;
 //   const [searchMobile, setSearchMobile] = useState('');
 //   const [isSearching, setIsSearching] = useState(false);
 //   const [isUpdateMode, setIsUpdateMode] = useState(false);
+//   const [isProbationEnabled, setIsProbationEnabled] = useState(false);
 
 //   const [departments, setDepartments] = useState([]);
 //   const [designations, setDesignations] = useState([]);
@@ -1807,7 +1761,26 @@ export default EmployeeModal;
 //   });
 
 
-  
+//   // Add this new state at the top with your other useState declarations
+// const [completedTabs, setCompletedTabs] = useState({
+//   personal: false,
+//   passport: false,
+//   skills: false,
+//   experience: false,
+//   family: false,
+//   insurance: false,
+//   references: false,
+//   bank: false,
+//   documents: false
+// });
+
+// // Update the completion status when data is saved successfully
+// const markTabAsCompleted = (tabId) => {
+//   setCompletedTabs(prev => ({
+//     ...prev,
+//     [tabId]: true
+//   }));
+// };
 
 //   const tabs = [
 //     { id: 'personal', label: 'Personal Details', icon: '👤' },
@@ -1825,16 +1798,47 @@ export default EmployeeModal;
 //     // { id: 'education', label: 'Educational Background', icon: '🎓' },
 //   ];
 
-//   useEffect(() => {
-//     if (isOpen) {
-//       fetchDropdownData();
-//       if (savedEmployeeId) {
-//         fetchEmployeeData();
-//         fetchPassportData();
-//         // fetchSkillsData();
-//       }
-//     }
-//   }, [isOpen, savedEmployeeId]);
+//   // useEffect(() => {
+//   //   if (isOpen) {
+//   //     fetchDropdownData();
+//   //     if (savedEmployeeId) {
+//   //       fetchEmployeeData();
+//   //       fetchPassportData();
+//   //       // fetchSkillsData();
+//   //     }
+//   //   }
+//   // }, [isOpen, savedEmployeeId]);
+
+// useEffect(() => {
+//   if (isOpen) {
+//     fetchDropdownData();
+
+//     // Auto-load data when employeeId is provided (edit mode)
+//     if (employeeId) {
+//       setSavedEmployeeId(employeeId);
+//       setIsUpdateMode(true);
+//       fetchEmployeeData(employeeId);
+//       fetchPassportData(employeeId);
+//     } 
+//     // else if (savedEmployeeId) {
+//     //   fetchEmployeeData(savedEmployeeId);
+//     //   fetchPassportData(savedEmployeeId);
+//     // }
+//   }
+// }, [isOpen, employeeId]);
+
+// useEffect(() => {
+//   const hasProbationData = 
+//     formData.employment.probation_period_days ||
+//     formData.employment.probation_start_date ||
+//     formData.employment.probation_end_date;
+  
+//   if (hasProbationData) {
+//     setIsProbationEnabled(true);
+//   }
+// }, [formData.employment.probation_period_days, formData.employment.probation_start_date, formData.employment.probation_end_date]);
+
+
 
 //   const fetchDropdownData = async () => {
 //     try {
@@ -1951,10 +1955,29 @@ export default EmployeeModal;
 //     }
 //   };
 
-//   const fetchEmployeeData = async () => {
-//     try {
-//       setIsLoading(true);
-//       const response = await EmployeeMasterAPI.getById(savedEmployeeId);
+
+//   // 1. Add a handler function for document completion (add this with your other handler functions)
+// const handleDocumentCompletion = () => {
+//   markTabAsCompleted('documents');
+//   alert('All documents saved/updated successfully! 🎉');
+//   // Close the modal after a brief delay to allow the alert to be read
+//   setTimeout(() => {
+//     onClose();
+//   }, 100);
+// };
+//   // const fetchEmployeeData = async () => {
+//   //   try {
+//   //     setIsLoading(true);
+//   //     const response = await EmployeeMasterAPI.getById(savedEmployeeId);
+//   const fetchEmployeeData = async (empId = savedEmployeeId) => {
+//       if (!empId) {
+//         console.log('No employee ID provided');
+//         return;
+//       }
+
+//       try {
+//         setIsLoading(true);
+//         const response = await EmployeeMasterAPI.getById(empId);
 
 //       if (response.success) {
 //         const employee = response.result;
@@ -2141,211 +2164,220 @@ export default EmployeeModal;
 //   const validatePassportDetails = () => {
 //     const newErrors = {};
 //     const { passport } = formData;
+    
+//     // if (!passport.passport_number?.trim()) {
+//     //   newErrors.passport_number = 'Passport number is required';
+//     // }
+//     // if (!passport.place_of_issue?.trim()) {
+//     //   newErrors.place_of_issue = 'Place of issue is required';
+//     // }
+//     // if (!passport.date_of_issue) {
+//     //   newErrors.date_of_issue = 'Date of issue is required';
+//     // }
+//     // if (!passport.date_of_expiry) {
+//     //   newErrors.date_of_expiry = 'Date of expiry is required';
+//     // }
 
-//     if (!passport.passport_number?.trim()) {
-//       newErrors.passport_number = 'Passport number is required';
-//     }
-//     if (!passport.place_of_issue?.trim()) {
-//       newErrors.place_of_issue = 'Place of issue is required';
-//     }
-//     if (!passport.date_of_issue) {
-//       newErrors.date_of_issue = 'Date of issue is required';
-//     }
-//     if (!passport.date_of_expiry) {
-//       newErrors.date_of_expiry = 'Date of expiry is required';
-//     }
+//     // if (passport.date_of_issue && passport.date_of_expiry) {
+//     //   const issueDate = new Date(passport.date_of_issue);
+//     //   const expiryDate = new Date(passport.date_of_expiry);
 
-//     if (passport.date_of_issue && passport.date_of_expiry) {
-//       const issueDate = new Date(passport.date_of_issue);
-//       const expiryDate = new Date(passport.date_of_expiry);
-
-//       if (expiryDate <= issueDate) {
-//         newErrors.date_of_expiry = 'Expiry date must be after issue date';
-//       }
-//     }
+//     //   if (expiryDate <= issueDate) {
+//     //     newErrors.date_of_expiry = 'Expiry date must be after issue date';
+//     //   }
+//     // }
 
 //     setErrors(newErrors);
 //     return Object.keys(newErrors).length === 0;
 //   };
 
-  
+//   // ============= MODIFIED handleNext function =============
+// const handleNext = async () => {
+//   // if (currentTab === 'personal') {
+//   //   if (!validatePersonalDetails()) {
+//   //     return;
+//   //   }
 
-//   const handleNext = async () => {
-//     if (currentTab === 'personal') {
-//       if (!validatePersonalDetails()) {
-//         return;
-//       }
-
-//       try {
-//         setIsLoading(true);
-        
-//         let response;
-        
-//         if (savedEmployeeId) {
-//           // UPDATE MODE - Include employee_id in the request
-//           const employeeData = {
-//             employee: {
-//               ...formData.employee,
-//               employee_id: savedEmployeeId
-//             },
-//             employment: formData.employment
-//           };
-          
-//           console.log('Updating employee with ID:', savedEmployeeId);
-//           console.log('Update Data:', employeeData);
-          
-//           response = await EmployeeMasterAPI.update(employeeData);
-//         } else {
-//           // ADD MODE - New employee
-//           const employeeData = {
-//             employee: formData.employee,
-//             employment: formData.employment
-//           };
-          
-//           console.log('Adding new employee');
-//           console.log('Add Data:', employeeData);
-          
-//           response = await EmployeeMasterAPI.add(employeeData);
-//         }
-
-//         if (response.success) {
-//           const employeeIdFromResponse = response.result?.employee?.employee_id ||
-//                                         response.result?.employee?.id ||
-//                                         savedEmployeeId;
-
-//           console.log('Response received:', response);
-//           console.log('Employee ID from response:', employeeIdFromResponse);
-
-//           if (!employeeIdFromResponse) {
-//             showErrorWithRetry('Failed to get employee ID from response');
-//             return;
-//           }
-
-//           setSavedEmployeeId(employeeIdFromResponse);
-//           setIsUpdateMode(true);
-//           alert(`Personal details ${savedEmployeeId ? 'updated' : 'saved'} successfully!`);
-//           setCurrentTab('passport');
-//         } else {
-//           showErrorWithRetry(response.message || 'Failed to save personal details');
-//         }
-//       } catch (error) {
-//         console.error('Error saving employee:', error);
-//         showErrorWithRetry(error.message || 'Backend server is not responding');
-//       } finally {
-//         setIsLoading(false);
-//       }
-//     } else if (currentTab === 'passport') {
-//       if (!validatePassportDetails()) {
-//         return;
-//       }
-
-//       if (!savedEmployeeId) {
-//         alert('Please save personal details first');
-//         setCurrentTab('personal');
-//         return;
-//       }
-
-//       try {
-//         setIsLoading(true);
-//         let passportData;
-//         let isUpdate = false;
-
-//         console.log('Current passport state:', formData.passport);
-//         console.log('Passport ID exists?', formData.passport.id);
-
-//         // Check if passport already exists (has id and id is not null/undefined)
-//         if (formData.passport.id && formData.passport.id !== null) {
-//           // UPDATE MODE
-//           isUpdate = true;
-//           passportData = {
-//             // id: formData.passport.id,
-//             passport_id: formData.passport.id,
-//             employee_id: savedEmployeeId,
-//             passport_number: formData.passport.passport_number,
-//             place_of_issue: formData.passport.place_of_issue,
-//             date_of_issue: formData.passport.date_of_issue,
-//             date_of_expiry: formData.passport.date_of_expiry
-//           };
-          
-//           console.log('Updating passport with ID:', formData.passport.id);
-//           console.log('Passport Update Data:', passportData);
-//         } else {
-//           // ADD MODE
-//           passportData = {
-//             employee_id: savedEmployeeId,
-//             passport_number: formData.passport.passport_number,
-//             place_of_issue: formData.passport.place_of_issue,
-//             date_of_issue: formData.passport.date_of_issue,
-//             date_of_expiry: formData.passport.date_of_expiry
-//           };
-          
-//           console.log('Adding new passport');
-//           console.log('Passport Add Data:', passportData);
-//         }
-
-//         const response = isUpdate
-//           ? await EmployeePassportDetailsAPI.update(passportData)
-//           : await EmployeePassportDetailsAPI.add(passportData);
-
-//         if (response.success) {
-//           if (response.result?.id && !isUpdate) {
-//             setFormData(prev => ({
-//               ...prev,
-//               passport: {
-//                 ...prev.passport,
-//                 id: response.result.id
-//               }
-//             }));
-//           }
-//           alert(`Passport details ${isUpdate ? 'updated' : 'saved'} successfully!`);
-//           setCurrentTab('skills');
-//         } else {
-//           showErrorWithRetry(response.message || 'Failed to save passport details');
-//         }
-//       } catch (error) {
-//         console.error('Error saving passport details:', error);
-//          const errorMessage = error.message || '';
-//           if (errorMessage.includes('already exists')) {
-//             alert('This passport number already exists in the system. Please use a different passport number or update the existing record.');
-//           } else {
-//             showErrorWithRetry(errorMessage || 'Backend server is not responding');
-//           }
-//         // showErrorWithRetry(error.message || 'Backend server is not responding');
-//       } finally {
-//         setIsLoading(false);
-//       }
-//     }
-//      else if (currentTab === 'skills') {
-//       // ============= SAVE/UPDATE CURRENT SKILL =============
-//       // Save current skill before moving forward
-//         // const saved = await saveCurrentSkill();
-//         // if (saved) {
-//           // Move to next tab or finish
-//           alert('All skills saved successfully!');
-//           setCurrentTab('experience');
-//           // You can navigate to next tab here if needed
-//         // }
+//   //   try {
+//   //     setIsLoading(true);
+//   //     let response;
       
-//     } else if (currentTab === 'experience'){
-//       alert('Experience section completed!');
-//       setCurrentTab('family'); // or whatever your next tab is
-//     } else if (currentTab === 'family'){
-//       alert('Family section completed!');
-//       setCurrentTab('insurance'); // or whatever your next tab is
-//     } else if (currentTab === 'insurance'){
-//       alert('Insurance section completed!');
-//       setCurrentTab('references'); // or whatever your next tab is
-//     } else if (currentTab === 'references'){
-//       alert('References section completed!');
-//       setCurrentTab('bank'); // or whatever your next tab is
-//     } else if (currentTab === 'bank'){
-//       alert('Bank section completed!');
-//       setCurrentTab('documents'); // or whatever your next tab is
-//     } else if (currentTab === 'documents'){
-//       alert('Doc section completed!');
-//       setCurrentTab('documents'); // or whatever your next tab is
+//   //     if (savedEmployeeId) {
+//   //       const employeeData = {
+//   //         employee: {
+//   //           ...formData.employee,
+//   //           employee_id: savedEmployeeId
+//   //         },
+//   //         employment: formData.employment
+//   //       };
+//   //       response = await EmployeeMasterAPI.update(employeeData);
+//   //     } else {
+//   //       const employeeData = {
+//   //         employee: formData.employee,
+//   //         employment: formData.employment
+//   //       };
+//   //       response = await EmployeeMasterAPI.add(employeeData);
+//   //     }
+
+//   //     if (response.success) {
+//   //       const employeeIdFromResponse = response.result?.employee?.employee_id ||
+//   //                                     response.result?.employee?.id ||
+//   //                                     savedEmployeeId;
+
+//   //       if (!employeeIdFromResponse) {
+//   //         showErrorWithRetry('Failed to get employee ID from response');
+//   //         return;
+//   //       }
+
+//   //       setSavedEmployeeId(employeeIdFromResponse);
+//   //       setIsUpdateMode(true);
+//   //       markTabAsCompleted('personal'); // ✅ Mark as completed
+//   //       // alert(`Personal details ${savedEmployeeId ? 'updated' : 'saved'} successfully!`);
+//   //       setCurrentTab('passport');
+//   //     } else {
+//   //       showErrorWithRetry(response.message || 'Failed to save personal details');
+//   //     }
+//   //   } catch (error) {
+//   //     console.error('Error saving employee:', error);
+//   //     showErrorWithRetry(error.message || 'Backend server is not responding');
+//   //   } finally {
+//   //     setIsLoading(false);
+//   //   }
+//   // }
+//   if (currentTab === 'personal') {
+//     if (!validatePersonalDetails()) {
+//       return;
 //     }
-//   };
+
+//     try {
+//       setIsLoading(true);
+//       let response;
+
+//       // 🔥 Fix: convert "" → null before sending to backend
+//       const sanitizedEmployment = {
+//         ...formData.employment,
+//         probation_period_days:
+//           formData.employment.probation_period_days === "" ||
+//           formData.employment.probation_period_days === undefined
+//             ? null
+//             : formData.employment.probation_period_days
+//       };
+
+//       if (savedEmployeeId) {
+//         const employeeData = {
+//           employee: {
+//             ...formData.employee,
+//             employee_id: savedEmployeeId
+//           },
+//           employment: sanitizedEmployment
+//         };
+//         response = await EmployeeMasterAPI.update(employeeData);
+//       } else {
+//         const employeeData = {
+//           employee: formData.employee,
+//           employment: sanitizedEmployment
+//         };
+//         response = await EmployeeMasterAPI.add(employeeData);
+//       }
+
+//       if (response.success) {
+//         const employeeIdFromResponse = response.result?.employee?.employee_id ||
+//                                       response.result?.employee?.id ||
+//                                       savedEmployeeId;
+
+//         if (!employeeIdFromResponse) {
+//           showErrorWithRetry('Failed to get employee ID from response');
+//           return;
+//         }
+
+//         setSavedEmployeeId(employeeIdFromResponse);
+//         setIsUpdateMode(true);
+//         markTabAsCompleted('personal');
+//         setCurrentTab('passport');
+//       } else {
+//         showErrorWithRetry(response.message || 'Failed to save personal details');
+//       }
+//     } catch (error) {
+//       console.error('Error saving employee:', error);
+//       showErrorWithRetry(error.message || 'Backend server is not responding');
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   } 
+  
+//   else if (currentTab === 'passport') {
+//     if (!validatePassportDetails()) {
+//       return;
+//     }
+
+//     if (!savedEmployeeId) {
+//       alert('Please save personal details first');
+//       setCurrentTab('personal');
+//       return;
+//     }
+
+//     try {
+//       setIsLoading(true);
+//       let passportData;
+//       let isUpdate = false;
+
+//       // 🔥 Helper function to convert empty strings to null
+//       const sanitizeDate = (dateValue) => {
+//         return dateValue && dateValue.trim() !== '' ? dateValue : null;
+//       };
+
+//       if (formData.passport.id && formData.passport.id !== null) {
+//         isUpdate = true;
+//         passportData = {
+//           passport_id: formData.passport.id,
+//           employee_id: savedEmployeeId,
+//           passport_number: formData.passport.passport_number,
+//           place_of_issue: formData.passport.place_of_issue,
+//           date_of_issue: sanitizeDate(formData.passport.date_of_issue), // 🔥 Fix
+//           date_of_expiry: sanitizeDate(formData.passport.date_of_expiry) // 🔥 Fix
+//         };
+//       } else {
+//         passportData = {
+//           employee_id: savedEmployeeId,
+//           passport_number: formData.passport.passport_number,
+//           place_of_issue: formData.passport.place_of_issue,
+//           date_of_issue: sanitizeDate(formData.passport.date_of_issue), // 🔥 Fix
+//           date_of_expiry: sanitizeDate(formData.passport.date_of_expiry) // 🔥 Fix
+//         };
+//       }
+
+//       const response = isUpdate
+//         ? await EmployeePassportDetailsAPI.update(passportData)
+//         : await EmployeePassportDetailsAPI.add(passportData);
+
+//       if (response.success) {
+//         if (response.result?.id && !isUpdate) {
+//           setFormData(prev => ({
+//             ...prev,
+//             passport: {
+//               ...prev.passport,
+//               id: response.result.id
+//             }
+//           }));
+//         }
+//         markTabAsCompleted('passport');
+//         setCurrentTab('skills');
+//       } else {
+//         showErrorWithRetry(response.message || 'Failed to save passport details');
+//       }
+//     } catch (error) {
+//       console.error('Error saving passport details:', error);
+//       const errorMessage = error.message || '';
+//       if (errorMessage.includes('already exists')) {
+//         alert('This passport number already exists in the system. Please use a different passport number or update the existing record.');
+//       } else {
+//         showErrorWithRetry(errorMessage || 'Backend server is not responding');
+//       }
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   }
+// };
 
 
 //   const handleCancel = () => {
@@ -2362,8 +2394,8 @@ export default EmployeeModal;
 //   if (!isOpen) return null;
 
 //   return (
-//     <div className="employee-modal-overlay">
-//       <div className="employee-modal">
+//     <div style={{marginTop: "0px"}} className="employee-modal-overlay mt-0">
+//       <div style={{width: "100%", maxWidth: "100%", height: "100vh", borderRadius: "0px"}} className="employee-modal px-0 md:px-5">
 //         <div className="employee-modal-header">
 //           <div className="header-content">
 //             <div className="header-icon">👤</div>
@@ -2377,25 +2409,30 @@ export default EmployeeModal;
 
 //         <div className="employee-modal-body">
 //           <div className="sidebar">
+//             {/* // ============= MODIFIED Sidebar Rendering ============= */}
 //             {tabs.map(tab => {
 //               const isAccessible =
 //                 tab.id === 'personal' ||
-//                 (tab.id === 'passport' && savedEmployeeId);
-                
+//                 (tab.id === 'passport' && savedEmployeeId) ||
+//                 (tab.id === 'skills' && savedEmployeeId) ||
+//                 (tab.id === 'experience' && savedEmployeeId) ||
+//                 (tab.id === 'family' && savedEmployeeId) ||
+//                 (tab.id === 'insurance' && savedEmployeeId) ||
+//                 (tab.id === 'references' && savedEmployeeId) ||
+//                 (tab.id === 'bank' && savedEmployeeId) ||
+//                 (tab.id === 'documents' && savedEmployeeId);
 
-//               const isCompleted =
-//                 (tab.id === 'personal' && savedEmployeeId) ||
-//                 (tab.id === 'passport' && formData.passport.id);
-                
+//               // ✅ Check completion status from state
+//               const isCompleted = completedTabs[tab.id];
 
 //               return (
 //                 <div
 //                   key={tab.id}
-//                   className={`sidebar-item ${currentTab === tab.id ? 'active' : ''} ${!isAccessible ? 'disabled' : ''}`}
+//                   className={`sidebar-item hover-sidebar-tab-bg ${currentTab === tab.id ? 'active' : ''} ${!isAccessible ? 'disabled' : ''} `}
 //                   onClick={() => isAccessible && setCurrentTab(tab.id)}
 //                 >
 //                   <span className="sidebar-icon">{tab.icon}</span>
-//                   <div className="sidebar-text">
+//                   <div className="sidebar-text ">
 //                     <div className="sidebar-label">{tab.label}</div>
 //                     <div className="sidebar-status">{isCompleted ? 'Completed' : 'Pending'}</div>
 //                   </div>
@@ -2405,14 +2442,26 @@ export default EmployeeModal;
 //           </div>
 
 //           <div className="content-area">
-//             {currentTab === 'personal' && (
+//             {/* {currentTab === 'personal' && (
 //               <div className="form-section">
 //                 <div className="section-header">
 //                   <h3>Personal Details</h3>
 //                   <p>Step 1 of 11</p>
 //                 </div>
 
-//                 {/* NEW: Mobile Number Search Field */}
+                
+//                 <div style={{
+//                   background: '#f0f7ff',
+//                   padding: '20px', */}
+//             {currentTab === 'personal' && (
+//   <div className="form-section">
+//     <div className="section-header">
+//       <h3>Personal Details</h3>
+//       <p>Step 1 of 11</p>
+//     </div>
+
+//     {/* NEW: Mobile Number Search Field - Only show when NOT editing */}
+//     {!hideSearch && (
 //                 <div style={{
 //                   background: '#f0f7ff',
 //                   padding: '20px',
@@ -2462,6 +2511,7 @@ export default EmployeeModal;
 //                     💡 Enter mobile number to check if employee already exists. If found, data will be loaded for updating.
 //                   </p>
 //                 </div>
+//              )}
 
 //                 <div className="form-grid">
 //                   <div className="form-group">
@@ -2976,7 +3026,7 @@ export default EmployeeModal;
 //                     </select>
 //                     {errors.work_location_type && <span className="error-message">{errors.work_location_type}</span>}
 //                   </div>
-
+// {/* 
 //                   <div className="form-group">
 //                     <label>Probation Period (Days)</label>
 //                     <input
@@ -3003,7 +3053,61 @@ export default EmployeeModal;
 //                       value={formData.employment.probation_end_date}
 //                       onChange={(e) => handleInputChange('employment', 'probation_end_date', e.target.value)}
 //                     />
-//                   </div>
+//                   </div> */}
+//                   <div className="form-group full-width">
+//   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+//     <input
+//       type="checkbox"
+//       id="probationCheckbox"
+//       checked={isProbationEnabled}
+//       onChange={(e) => {
+//         setIsProbationEnabled(e.target.checked);
+//         // Clear probation fields when unchecked
+//         if (!e.target.checked) {
+//           handleInputChange('employment', 'probation_period_days', '');
+//           handleInputChange('employment', 'probation_start_date', '');
+//           handleInputChange('employment', 'probation_end_date', '');
+//         }
+//       }}
+//       style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+//     />
+//     <label htmlFor="probationCheckbox" style={{ cursor: 'pointer', fontWeight: 'bold', margin: 0 }}>
+//       Enable Probation Period
+//     </label>
+//   </div>
+// </div>
+
+// {isProbationEnabled && (
+//   <>
+//     <div className="form-group">
+//       <label>Probation Period (Days)</label>
+//       <input
+//         type="number"
+//         placeholder="90"
+//         value={formData.employment.probation_period_days}
+//         onChange={(e) => handleInputChange('employment', 'probation_period_days', e.target.value)}
+//       />
+//     </div>
+
+//     <div className="form-group">
+//       <label>Probation Start Date</label>
+//       <input
+//         type="date"
+//         value={formData.employment.probation_start_date}
+//         onChange={(e) => handleInputChange('employment', 'probation_start_date', e.target.value)}
+//       />
+//     </div>
+
+//     <div className="form-group">
+//       <label>Probation End Date</label>
+//       <input
+//         type="date"
+//         value={formData.employment.probation_end_date}
+//         onChange={(e) => handleInputChange('employment', 'probation_end_date', e.target.value)}
+//       />
+//     </div>
+//   </>
+// )}
 
 //                   <div className="form-group">
 //                     <label>Official Email *</label>
@@ -3126,72 +3230,76 @@ export default EmployeeModal;
 //             )}
 
 //             {currentTab === 'skills' && (
-//               <EmployeeSkills
-//                 employeeId={savedEmployeeId}
-//                 isLoading={isLoading}
-//                 setIsLoading={setIsLoading}
-//                 onNextTab={() => setCurrentTab('experience')} 
-//               />
+//                 <EmployeeSkills
+//                   employeeId={savedEmployeeId}
+//                   isLoading={isLoading}
+//                   setIsLoading={setIsLoading}
+//                   onNextTab={() => setCurrentTab('experience')}
+//                   onComplete={() => markTabAsCompleted('skills')} // ✅ Add this
+//                 />
+//               )}
 
-//             )}
+//               {currentTab === 'experience' && (
+//                 <EmployeePriorExperience
+//                   employeeId={savedEmployeeId}
+//                   isLoading={isLoading}
+//                   setIsLoading={setIsLoading}
+//                   onNextTab={() => setCurrentTab('family')}
+//                   onComplete={() => markTabAsCompleted('experience')} // ✅ Add this
+//                 />
+//               )}
+
+//               {currentTab === 'family' && (
+//                 <EmployeeFamilyDetails
+//                   employeeId={savedEmployeeId}
+//                   isLoading={isLoading}
+//                   setIsLoading={setIsLoading} 
+//                   onNextTab={() => setCurrentTab('insurance')}
+//                   onComplete={() => markTabAsCompleted('family')} // ✅ Add this
+//                   maritalStatus={formData.employee.marital_status} // Add this line
+//                 />
+//               )}
+
+//               {currentTab === 'insurance' && (
+//                 <EmployeeInsuranceDetails
+//                   employeeId={savedEmployeeId}
+//                   isLoading={isLoading}
+//                   setIsLoading={setIsLoading}
+//                   onNextTab={() => setCurrentTab('references')}
+//                   onComplete={() => markTabAsCompleted('insurance')} // ✅ Add this
+//                 />
+//               )}
+
+//               {currentTab === 'references' && (
+//                 <EmployeeReferences
+//                   employeeId={savedEmployeeId}
+//                   isLoading={isLoading}
+//                   setIsLoading={setIsLoading}
+//                   onNextTab={() => setCurrentTab('bank')}
+//                   onComplete={() => markTabAsCompleted('references')} // ✅ Add this
+//                 />
+//               )}
+
+//               {currentTab === 'bank' && (
+//                 <EmployeeBankDetails
+//                   employeeId={savedEmployeeId}
+//                   isLoading={isLoading}
+//                   setIsLoading={setIsLoading}
+//                   onNextTab={() => setCurrentTab('documents')}
+//                   onComplete={() => markTabAsCompleted('bank')} // ✅ Add this
+//                 />
+//               )}
 
 
-
-//             {currentTab === 'experience' && (
-//               <EmployeePriorExperience
-//                 employeeId={savedEmployeeId}
-//                 isLoading={isLoading}
-//                 setIsLoading={setIsLoading}
-//                 onNextTab={() => setCurrentTab('family')} 
-//               />
-//             )}
-
-//             {currentTab === 'family' && (
-//               <EmployeeFamilyDetails
-//                 employeeId={savedEmployeeId}
-//                 isLoading={isLoading}
-//                 setIsLoading={setIsLoading}
-//                 onNextTab={() => setCurrentTab('insurance')} 
-//               />
-//             )}
-
-
-//             {currentTab === 'insurance' && (
-//               <EmployeeInsuranceDetails
-//                 employeeId={savedEmployeeId}
-//                 isLoading={isLoading}
-//                 setIsLoading={setIsLoading}
-//                 onNextTab={() => setCurrentTab('references')} 
-//               />
-//             )}
-
-
-//             {currentTab === 'references' && (
-//               <EmployeeReferences
-//                 employeeId={savedEmployeeId}
-//                 isLoading={isLoading}
-//                 setIsLoading={setIsLoading}
-//                 onNextTab={() => setCurrentTab('bank')} 
-//               />
-//             )}
-
-//             {currentTab === 'bank' && (
-//               <EmployeeBankDetails
-//                 employeeId={savedEmployeeId}
-//                 isLoading={isLoading}
-//                 setIsLoading={setIsLoading}
-//                 onNextTab={() => setCurrentTab('documents')} 
-//               />
-//             )}
-            
-//             {currentTab === 'documents' && (
-//               <EmployeeDocumentChecklist
-//                 employeeId={savedEmployeeId}
-//                 isLoading={isLoading}
-//                 setIsLoading={setIsLoading}
-//                 onNextTab={() => setCurrentTab('documents')} 
-//               />
-//             )}
+//               {currentTab === 'documents' && (
+//                 <EmployeeDocumentChecklist
+//                   employeeId={savedEmployeeId}
+//                   isLoading={isLoading}
+//                   setIsLoading={setIsLoading}
+//                   onNextTab={handleDocumentCompletion}
+//                   // onComplete={handleDocumentCompletion}
+//                 />
+//               )}
 
 //           </div>
 //         </div>
@@ -3201,3 +3309,4 @@ export default EmployeeModal;
 // };
 
 // export default EmployeeModal;
+
