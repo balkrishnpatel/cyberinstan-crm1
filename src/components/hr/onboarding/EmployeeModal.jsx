@@ -895,7 +895,7 @@ const handleNext = async () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Age (Auto-calculated)</label>
+                    <label>Age</label>
                     <input
                       type="text"
                       placeholder="Age will be calculated"

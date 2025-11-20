@@ -13,6 +13,8 @@ const OfficeLocationManagement = () => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'success' });
+  const [confirmModal, setConfirmModal] = useState({ show: false, onConfirm: null }); 
   const locationsPerPage = 10;
 
   useEffect(() => {
@@ -60,7 +62,9 @@ const OfficeLocationManagement = () => {
       }
     } catch (err) {
       console.error('Error fetching location details:', err);
-      alert('Failed to load location details');
+      // alert('Failed to load location details');
+      setAlertModal({ show: true, message: 'Failed to load location details', type: 'error' });
+
     }
   };
 
@@ -73,27 +77,54 @@ const OfficeLocationManagement = () => {
       }
     } catch (err) {
       console.error('Error fetching location details:', err);
-      alert('Failed to load location details');
+      // alert('Failed to load location details');
+      setAlertModal({ show: true, message: 'Failed to load location details', type: 'error' });
     }
   };
+
+  // const handleDeleteLocation = async (locationId) => {
+  //   if (window.confirm('Are you sure you want to delete this office location?')) {
+  //     try {
+  //       const response = await OfficeLocationsAPI.delete(locationId);
+  //       if (response.success) {
+  //         // alert('Office location deleted successfully');
+  //         setAlertModal({ show: true, message: 'Office location deleted successfully', type: 'success' });
+  
+  //         loadLocations();
+  //       } else {
+  //         // alert('Failed to delete office location');
+  //         setAlertModal({ show: true, message: 'Failed to delete office location', type: 'error' });
+    
+  //       }
+  //     } catch (err) {
+  //       console.error('Error deleting location:', err);
+  //       // alert('Failed to delete office location');
+  //       setAlertModal({ show: true, message: 'Failed to delete office location', type: 'error' });
+    
+  //     }
+  //   }
+  // };
+
 
   const handleDeleteLocation = async (locationId) => {
-    if (window.confirm('Are you sure you want to delete this office location?')) {
-      try {
-        const response = await OfficeLocationsAPI.delete(locationId);
-        if (response.success) {
-          alert('Office location deleted successfully');
-          loadLocations();
-        } else {
-          alert('Failed to delete office location');
+    setConfirmModal({
+      show: true,
+      onConfirm: async () => {
+        try {
+          const response = await OfficeLocationsAPI.delete(locationId);
+          if (response.success) {
+            setAlertModal({ show: true, message: 'Office location deleted successfully', type: 'success' });
+            loadLocations();
+          } else {
+            setAlertModal({ show: true, message: 'Failed to delete office location', type: 'error' });
+          }
+        } catch (err) {
+          console.error('Error deleting location:', err);
+          setAlertModal({ show: true, message: 'Failed to delete office location', type: 'error' });
         }
-      } catch (err) {
-        console.error('Error deleting location:', err);
-        alert('Failed to delete office location');
       }
-    }
+    });
   };
-
   const getCityCount = () => {
     const uniqueCities = new Set(locations.map(loc => loc.city));
     return uniqueCities.size;
@@ -131,7 +162,8 @@ const OfficeLocationManagement = () => {
         const response = await OfficeLocationsAPI.add(payload);
         
         if (response.success) {
-          alert('Office location added successfully');
+          // alert('Office location added successfully');
+           setAlertModal({ show: true, message: 'Office location added successfully', type: 'success' });
           loadLocations();
           setShowAddModal(false);
           setFormData({
@@ -145,11 +177,14 @@ const OfficeLocationManagement = () => {
             longitude: ''
           });
         } else {
-          alert(response.message || 'Failed to add office location');
+          // alert(response.message || 'Failed to add office location');
+          setAlertModal({ show: true, message: response.message || 'Failed to add office location', type: 'error' });
         }
       } catch (err) {
         console.error('Error adding location:', err);
-        alert('Failed to add office location');
+        // alert('Failed to add office location');
+            setAlertModal({ show: true, message: 'Failed to add office location', type: 'error' });
+     
       } finally {
         setSubmitting(false);
       }
@@ -294,16 +329,22 @@ const OfficeLocationManagement = () => {
         const response = await OfficeLocationsAPI.update(payload);
         
         if (response.success) {
-          alert('Office location updated successfully');
+          // alert('Office location updated successfully');
+           setAlertModal({ show: true, message: 'Office location updated successfully', type: 'success' });
+     
           loadLocations();
           setShowEditModal(false);
           setSelectedLocation(null);
         } else {
-          alert(response.message || 'Failed to update office location');
+          // alert(response.message || 'Failed to update office location');
+          setAlertModal({ show: true, message: response.message || 'Failed to update office location', type: 'error' });
+      
         }
       } catch (err) {
         console.error('Error updating location:', err);
-        alert('Failed to update office location');
+        // alert('Failed to update office location');
+        setAlertModal({ show: true, message: 'Failed to update office location', type: 'error' });
+   
       } finally {
         setSubmitting(false);
       }
@@ -534,6 +575,57 @@ const OfficeLocationManagement = () => {
     );
   };
 
+  const AlertModal = () => {
+    if (!alertModal.show) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 w-full max-w-md">
+          <h3 className={`text-lg font-semibold mb-3 ${alertModal.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+            {alertModal.type === 'success' ? '✓ Success' : '✗ Error'}
+          </h3>
+          <p className="text-gray-700 mb-4">{alertModal.message}</p>
+          <button
+            onClick={() => setAlertModal({ show: false, message: '', type: 'success' })}
+            className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const ConfirmModal = () => {
+    if (!confirmModal.show) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 w-full max-w-md">
+          <h3 className="text-lg font-semibold mb-3 text-orange-600">Confirm Delete</h3>
+          <p className="text-gray-700 mb-6">Are you sure you want to delete this office location?</p>
+          <div className="flex space-x-3">
+            <button
+              onClick={() => {
+                confirmModal.onConfirm();
+                setConfirmModal({ show: false, onConfirm: null });
+              }}
+              className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => setConfirmModal({ show: false, onConfirm: null })}
+              className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -749,6 +841,8 @@ const OfficeLocationManagement = () => {
       <AddLocationModal />
       <EditLocationModal />
       <LocationDetailsModal />
+      <AlertModal />
+      <ConfirmModal />
     </div>
   );
 };

@@ -12,6 +12,9 @@ const RoleManagement = () => {
   const [selectedRole, setSelectedRole] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'success' }); 
+  const [confirmModal, setConfirmModal] = useState({ show: false, onConfirm: null }); 
+ 
   const rolesPerPage = 10;
 
   useEffect(() => {
@@ -57,7 +60,9 @@ const RoleManagement = () => {
       }
     } catch (err) {
       console.error('Error fetching role details:', err);
-      alert('Failed to load role details');
+      // alert('Failed to load role details');
+      setAlertModal({ show: true, message: 'Failed to load role details', type: 'error' });
+  
     }
   };
 
@@ -70,27 +75,48 @@ const RoleManagement = () => {
       }
     } catch (err) {
       console.error('Error fetching role details:', err);
-      alert('Failed to load role details');
+      // alert('Failed to load role details');
+      setAlertModal({ show: true, message: 'Failed to load role details', type: 'error' });
+  
     }
   };
+
+  // const handleDeleteRole = async (roleId) => {
+  //   if (window.confirm('Are you sure you want to delete this role?')) {
+  //     try {
+  //       const response = await RolesAPI.delete(roleId);
+  //       if (response.success) {
+  //         alert('Role deleted successfully');
+  //         loadRoles();
+  //       } else {
+  //         alert('Failed to delete role');
+  //       }
+  //     } catch (err) {
+  //       console.error('Error deleting role:', err);
+  //       alert('Failed to delete role');
+  //     }
+  //   }
+  // };
 
   const handleDeleteRole = async (roleId) => {
-    if (window.confirm('Are you sure you want to delete this role?')) {
-      try {
-        const response = await RolesAPI.delete(roleId);
-        if (response.success) {
-          alert('Role deleted successfully');
-          loadRoles();
-        } else {
-          alert('Failed to delete role');
+    setConfirmModal({
+      show: true,
+      onConfirm: async () => {
+        try {
+          const response = await RolesAPI.delete(roleId);
+          if (response.success) {
+            setAlertModal({ show: true, message: 'Role deleted successfully', type: 'success' });
+            loadRoles();
+          } else {
+            setAlertModal({ show: true, message: 'Failed to delete role', type: 'error' });
+          }
+        } catch (err) {
+          console.error('Error deleting role:', err);
+          setAlertModal({ show: true, message: 'Failed to delete role', type: 'error' });
         }
-      } catch (err) {
-        console.error('Error deleting role:', err);
-        alert('Failed to delete role');
       }
-    }
+    });
   };
-
   const AddRoleModal = () => {
     const [formData, setFormData] = useState({
       role_name: ''
@@ -105,16 +131,23 @@ const RoleManagement = () => {
         const response = await RolesAPI.add({ role_name: formData.role_name });
         
         if (response.success) {
-          alert('Role added successfully');
+          // alert('Role added successfully');
+          setAlertModal({ show: true, message: 'Role added successfully', type: 'success' });
+
           loadRoles();
           setShowAddModal(false);
           setFormData({ role_name: '' });
         } else {
-          alert(response.message || 'Failed to add role');
+          // alert(response.message || 'Failed to add role');
+          setAlertModal({ show: true, message: response.message || 'Failed to add role', type: 'error' });
+   
+
         }
       } catch (err) {
         console.error('Error adding role:', err);
-        alert('Failed to add role');
+        // alert('Failed to add role');
+        setAlertModal({ show: true, message: 'Failed to add role', type: 'error' });
+  
       } finally {
         setSubmitting(false);
       }
@@ -189,16 +222,21 @@ const RoleManagement = () => {
         });
         
         if (response.success) {
-          alert('Role updated successfully');
+          // alert('Role updated successfully');
+          setAlertModal({ show: true, message: 'Role updated successfully', type: 'success' });
+
           loadRoles();
           setShowEditModal(false);
           setSelectedRole(null);
         } else {
-          alert(response.message || 'Failed to update role');
+          // alert(response.message || 'Failed to update role');
+          setAlertModal({ show: true, message: response.message || 'Failed to update role', type: 'error' });
         }
       } catch (err) {
         console.error('Error updating role:', err);
-        alert('Failed to update role');
+        // alert('Failed to update role');
+        setAlertModal({ show: true, message: 'Failed to update role', type: 'error' });
+    
       } finally {
         setSubmitting(false);
       }
@@ -310,6 +348,57 @@ const RoleManagement = () => {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const AlertModal = () => {
+    if (!alertModal.show) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 w-full max-w-md">
+          <h3 className={`text-lg font-semibold mb-3 ${alertModal.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+            {alertModal.type === 'success' ? '✓ Success' : '✗ Error'}
+          </h3>
+          <p className="text-gray-700 mb-4">{alertModal.message}</p>
+          <button
+            onClick={() => setAlertModal({ show: false, message: '', type: 'success' })}
+            className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const ConfirmModal = () => {
+    if (!confirmModal.show) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 w-full max-w-md">
+          <h3 className="text-lg font-semibold mb-3 text-orange-600">Confirm Delete</h3>
+          <p className="text-gray-700 mb-6">Are you sure you want to delete this role?</p>
+          <div className="flex space-x-3">
+            <button
+              onClick={() => {
+                confirmModal.onConfirm();
+                setConfirmModal({ show: false, onConfirm: null });
+              }}
+              className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => setConfirmModal({ show: false, onConfirm: null })}
+              className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       </div>
@@ -501,6 +590,8 @@ const RoleManagement = () => {
       <AddRoleModal />
       <EditRoleModal />
       <RoleDetailsModal />
+      <AlertModal />
+      <ConfirmModal />
     </div>
   );
 };
